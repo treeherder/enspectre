@@ -33,6 +33,14 @@ def frame_feed(task, angle):
          cv2.imshow ('frame from array', num_im)
 
 
+def make_mat(from_frame):
+   frame_mat = {
+      'pixels': from_frame.tostring(),
+      'size': from_frame.size,
+      'mode': from_frame.mode,
+      }
+   return (frame_mat)
+
 if __name__ == '__main__':
    task_0 = Queue()
    task_1 = Queue()
@@ -55,22 +63,12 @@ if __name__ == '__main__':
       if flag0 == 0 or flag1==0:
          break
       im0 = frame.fromarray(frame0)
-
-      im0_dict = {
-      'pixels': im0.tostring(),
-      'size': im0.size,
-      'mode': im0.mode,
-      }
-
-      task_0.put(im0_dict)
+      mat_0 = make_mat(im0)
+      task_0.put(mat_0)
       im1 = frame.fromarray(frame1)
-      im1_dict = {
-      'pixels': im1.tostring(),
-      'size': im1.size,
-      'mode': im1.mode,
-      }
-      task_1.put(im1_dict)
-
+      mat_0 = make_mat(im1)
+      task_1.put(mat_1)
+      
 task_0.put(None)
 task_1.put(None)
 o.join()
