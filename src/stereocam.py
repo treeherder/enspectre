@@ -3,7 +3,6 @@ from multiprocessing import Process, Queue
 from PIL import Image
 import cv2
 import numpy as np
-import time           # Added
 
 def frame_feed(task, angle):
    cv2.namedWindow ('autosize frame', cv2.WINDOW_NORMAL)
@@ -57,8 +56,21 @@ if __name__ == '__main__':
 
       task_0.put(frame0)
       task_1.put(frame1)
-#      time.sleep(0.010)
       continue             #everything fails without a slight pause and the continue
+
+
+      h1, w1 = frame0.shape[:2]
+      h2, w2 = frame1.shape[:2]
+
+      #create empty matrix
+      vis = np.zeros((max(h1, h2), w1+w2,3), np.uint8)
+
+      #combine 2 images
+      vis[:h1, :w1,:3] = frame0
+      vis[:h2, w1:w1+w2,:3] = frame1
+      vis2 = cv2.CreateMat(vis.shape[0], vis.shape[1], cv.CV_8UC3)
+      cv2.imshow("vis", vis2)
+
 
       if flag0 == 0 or flag1==0:
          break
@@ -68,7 +80,9 @@ if __name__ == '__main__':
       im1 = frame.fromarray(frame1)
       mat_0 = make_mat(im1)
       task_1.put(mat_1)
-      
+
+
+
 task_0.put(None)
 task_1.put(None)
 o.join()
