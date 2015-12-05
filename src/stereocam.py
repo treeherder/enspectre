@@ -3,52 +3,45 @@ from multiprocessing import Process, Queue
 from PIL import Image
 import cv2
 import numpy as np
-from datetime import datetime
+import time
+def image_display(left, right, outqueue):
+   while True:
+      left_frame= left.get()              
+      right_frame = right.get()# Added
+      image = np.concatenate((left_frame, right_frame), axis=1)
 
-class Camera(Process):
-   def __init__(self, task, angle):
-      super(Camera, self).__init__()
-      self.task = task
-      self.angle = angle
 
-   def frame_feed(self):
-      while True:
-         frame = self.task.get()  #get frame from process queue
-         if frame is None:
-            break
-         (h, w) = frame.shape[:2]
-         center = (w / 2, h / 2)  #incase we change the shape/size farther down the line
-         M = cv2.getRotationMatrix2D(center, seelf.angle, 1.0)
-         frame = cv2.warpAffine(frame, M, (w, h))  #remap rotated frame to orignal
-  
+      outqueue.put(image)
+
+      continue                             # Added
+
 
 
 if __name__ == '__main__':
-   task_right = Queue()
-   task_left = Queue()
-   con_task = Queue()
-
-   capture_0 = cv2.VideoCapture(0)
-   capture_1 = cv2.VideoCapture(1)
-
-   left_cam = Camera(task_left, -90,)
-   left_cam.start()
-   right_cam = Camera(task_right, 90,)
-   right_cam.start()
+   taskqueue = Queue()
+   outqueue = Queue()
+   leftqueue = Queue()
+   rightqueue = Queue()
+   left_handle = cv2.VideoCapture(0)
+   right_handle = cv2.VideoCapture(1)
+   p = Process(target=image_display, args=(leftqueue, rightqueue, outqueue))
+   p.start()
    while True:
-      flag0, frame0=capture_0.read()
-      flag1, frame1=capture_1.read()
+      flag, left_image=left_handle.read()
 
-      task_right.put(frame0)
-      task_left.put(frame1)
+      flag, right_image=right_handle.read()
 
-      combo = np.concatenate((frame0, frame1), axis=1)
-
-      cv2.imshow('combined output', combo)
-      if (cv2.waitKey(1) & 0xFF) == ord('q'):
+      leftqueue.put(left_image)  # Added
+      rightqueue.put(right_image)  # Added
+      input_frame = outqueue.get()
+      cv2.imshow('combined output', input_frame)
+      if (cv2.waitKey(10) & 0xFF) == ord('q'):
          print ("user abort by input")
          cv2.destroyAllWindows()
          exit(0)
          break
-      
-      continue             #everything fails without the continue?
+
+
+taskqueue.put(None)
+p.join()
+cv2.destroyAllWindows()
