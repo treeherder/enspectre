@@ -25,10 +25,10 @@ if __name__ == '__main__':
    capture_0 = cv2.VideoCapture(0)
    capture_1 = cv2.VideoCapture(1)
 
-   p = Process(target=frame_feed, args=(task_1, -90, con_task))
-   p.start()
-   o = Process(target=frame_feed, args=(task_0, 90, con_task))
-   o.start()
+   left_cam = Process(target=frame_feed, args=(task_1, -90, con_task))
+   left_cam.start()
+   right_cam = Process(target=frame_feed, args=(task_0, 90, con_task))
+   right_cam.start()
    while True:
       flag0, frame0=capture_0.read()
       flag1, frame1=capture_1.read()
@@ -36,9 +36,9 @@ if __name__ == '__main__':
       task_0.put(frame0)
       task_1.put(frame1)
 
-      vis = np.concatenate((frame0, frame1), axis=1)
+      combo = np.concatenate((frame0, frame1), axis=1)
 
-      cv2.imshow('out', vis)
+      cv2.imshow('combined output  {0}'.format(time.Now()), combo)
       if (cv2.waitKey(1) & 0xFF) == ord('q'):
          print ("user abort by input")
          cv2.destroyAllWindows()
