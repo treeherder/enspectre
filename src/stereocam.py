@@ -4,7 +4,7 @@ from PIL import Image
 import cv2
 import numpy as np
 import time
-import sys
+import sys, os
 
 
 def image_display(left, right, outqueue):
@@ -34,6 +34,21 @@ class Reader(Process):
    def run(self):
         self.que.put(self.image_print())
 
+class Printr(Process):
+   #this process will write numpy arrays to the pid.out
+   #useful for debugging, mainly exists as proof-of-concept
+   def __init__(self, toprint):
+      Process.__init__(self)
+      self.toprint = toprint
+   def run(self):
+      self.initialize_logging()
+      print(self.toprint.get())
+
+   def initialize_logging(self):
+      #having tons of trouble with latency printing from stdout
+       sys.stdout = open(str(os.getpid()) + ".out", "a")
+       sys.stderr = open(str(os.getpid()) + "_error.out", "a")
+
 
 
 if __name__ == '__main__':
@@ -55,8 +70,10 @@ if __name__ == '__main__':
    eyes.start()
 
    r= Reader( taskqueue, printer).start()
-
+   #p = Printr(printer).start()
+   #enable Printer for debugging log
    while True:
+
       flag, left_image=left_handle.read()
 
       flag, right_image=right_handle.read()
@@ -73,11 +90,11 @@ if __name__ == '__main__':
          exit(0)
          break
       if (cv2.waitKey(10) & 0xFF) == ord('w'):
+
          print ("writing output")
          cv2.imwrite("sample.png", input_frame)
-         print(printer.get())
-         time.sleep(5)
          continue
+
       continue
 
 taskqueue.put(None)
