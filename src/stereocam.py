@@ -8,9 +8,12 @@ import sys, os
 
 
 def image_display(left, right, outqueue):
+   
    while True:
-      left_frame= left.get()              
-      right_frame = right.get()# Added
+      left_frame = left.get()              
+      right_frame = right.get()
+   
+      
       image = np.concatenate((left_frame, right_frame), axis=1)
       outqueue.put(image)
 
@@ -49,6 +52,27 @@ class Printr(Process):
        sys.stdout = open(str(os.getpid()) + ".out", "a")
        sys.stderr = open(str(os.getpid()) + "_error.out", "a")
 
+class Feature():
+    def __init__(self, cap_idx):
+        self.cap = cv2.VideoCapture(cap_idx)
+        self.ret, self.frame1 = self.cap.read()
+        self.prvs = cv2.cvtColor(self.frame1,cv2.COLOR_BGR2GRAY)
+        self.hsv = np.zeros_like(self.frame1)
+        self.hsv[...,1] = 255
+
+    def detect(self):
+        self.ret, self.frame2 = self.cap.read()
+        self.next = cv2.cvtColor(self.frame2,cv2.COLOR_BGR2GRAY)
+
+        self.flow = cv2.calcOpticalFlowFarneback(self.prvs, self.next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+        self.mag, self.ang = cv2.cartToPolar(self.flow[...,0], self.flow[...,1])
+        self.hsv[...,0] = self.ang*180/np.pi/2
+        self.hsv[...,2] = cv2.normalize(self.mag,None,0,255,cv2.NORM_MINMAX)
+        self.rgb = cv2.cvtColor(self.hsv,cv2.COLOR_HSV2BGR)
+        return (self.rgb)
+
+
 
 
 if __name__ == '__main__':
@@ -62,8 +86,8 @@ if __name__ == '__main__':
    rightqueue = Queue()
 
    #instantiate  capture class
-   left_handle = cv2.VideoCapture(1)
-   right_handle = cv2.VideoCapture(0)
+   left_handle = Feature(1)
+   right_handle = Feature(0)
 
 
    eyes = Process(target=image_display, args=(leftqueue, rightqueue, outqueue))
@@ -74,9 +98,9 @@ if __name__ == '__main__':
    #enable Printer for debugging log
    while True:
 
-      flag, left_image=left_handle.read()
+      left_image=left_handle.detect()
 
-      flag, right_image=right_handle.read()
+      right_image=right_handle.detect()
 
       leftqueue.put(left_image)  # Added
       rightqueue.put(right_image)  # Added
