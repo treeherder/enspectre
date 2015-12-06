@@ -20,5 +20,5 @@ ____
 ----
   1.~~combine mats into single mat~~
   2. generate ROAs based on matched patterns for object recognition
-  3. print and mount camera brackets
+  3.~~ print and mount camera brackets~~
   4. define chassis methods
