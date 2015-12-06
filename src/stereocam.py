@@ -30,9 +30,7 @@ class Reader(Process):
       'size': im.size,
       'mode': im.mode,
       }
-      print(im_dict)
-      sys.stdout.flush()
-
+      return(im_dict)
    def run(self):
         self.que.put(self.image_print())
 
@@ -68,6 +66,7 @@ if __name__ == '__main__':
       input_frame = outqueue.get()
       taskqueue.put(input_frame)
       cv2.imshow('combined output', input_frame)
+
       if (cv2.waitKey(10) & 0xFF) == ord('q'):
          print ("user abort by input")
          cv2.destroyAllWindows()
@@ -76,7 +75,7 @@ if __name__ == '__main__':
       if (cv2.waitKey(10) & 0xFF) == ord('w'):
          print ("writing output")
          cv2.imwrite("sample.png", input_frame)
-         printer.get()
+         print(printer.get())
          time.sleep(5)
          continue
       continue
