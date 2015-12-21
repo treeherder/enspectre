@@ -11,8 +11,7 @@ def image_display(left, right, outqueue):
    while True:
       left_frame = left.get()              
       right_frame = right.get()
-   
-      
+
       image = np.concatenate((left_frame, right_frame), axis=1)
       outqueue.put(image)
 
@@ -96,60 +95,3 @@ class Feature():
       self.img2 = cv2.rectangle(self.rgb, (self.x,self.y), (self.x+self.w,self.y+self.h), 255,2)
       return (self.img2)
       
-
-
-if __name__ == '__main__':
-   #queues to handle the exchange of data between processes 
-   taskqueue = Queue()
-   
-   printer = Queue()
-   outqueue = Queue()
-   
-   leftqueue = Queue()
-   rightqueue = Queue()
-
-   #instantiate  capture class
-   left_handle = Feature(1)
-   right_handle = Feature(0)
-
-
-   eyes = Process(target=image_display, args=(leftqueue, rightqueue, outqueue))
-   eyes.start()
-
-   r= Reader(taskqueue, printer).start()
-   #p = Printr(printer).start()
-   #enable Printer for debugging log
-   while True:
-
-      left_image=left_handle.detect()
-      #left_image=left_handle.unfiltered()
-
-      #right_image=right_handle.unfiltered()
-
-      right_image=right_handle.detect()
-
-      leftqueue.put(left_image)
-      rightqueue.put(right_image)
-      input_frame = outqueue.get()
-      taskqueue.put(input_frame)
-      cv2.imshow('combined output', input_frame)
-      stroke = (cv2.waitKey(30) & 0xFF)
-      if stroke == ord('q'):
-         print ("user abort by input")
-         cv2.destroyAllWindows()
-         exit(0)
-         break
-      elif stroke == ord('w'):
-         print ("writing output")
-         cv2.imwrite("sample.png", input_frame)
-         continue
-      elif stroke == ord('r'):
-         print ("resetting orientation")
-         left_handle.begin()
-         right_handle.begin()
-         continue
-
-      continue
-
-taskqueue.put(None)
-cv2.destroyAllWindows()
