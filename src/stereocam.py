@@ -7,8 +7,7 @@ import time
 import sys, os
 
 
-def image_display(left, right, outqueue):
-   
+def image_display(left, right, outqueue): 
    while True:
       left_frame = left.get()              
       right_frame = right.get()
@@ -22,9 +21,9 @@ def image_display(left, right, outqueue):
 
 class Reader(Process):
    def __init__(self,framequeue, printqueue):
-        Process.__init__(self)
-        self.que=printqueue
-        self.frame = framequeue
+      Process.__init__(self)
+      self.que=printqueue
+      self.frame = framequeue
 
    def image_print(self):
       im = Image.fromarray(self.frame.get())
@@ -37,6 +36,8 @@ class Reader(Process):
    def run(self):
         self.que.put(self.image_print())
 
+
+
 class Printr(Process):
    #this process will write numpy arrays to the pid.out
    #useful for debugging, mainly exists as proof-of-concept
@@ -46,32 +47,32 @@ class Printr(Process):
    def run(self):
       self.initialize_logging()
       print(self.toprint.get())
-
    def initialize_logging(self):
       #having tons of trouble with latency printing from stdout
-       sys.stdout = open(str(os.getpid()) + ".out", "a")
-       sys.stderr = open(str(os.getpid()) + "_error.out", "a")
+      sys.stdout = open(str(os.getpid()) + ".out", "a")
+      sys.stderr = open(str(os.getpid()) + "_error.out", "a")
 
 class Feature():
    def __init__(self, cap_idx):
-        self.cap = cv2.VideoCapture(cap_idx)
-        self.begin()
+      self.cap = cv2.VideoCapture(cap_idx)
+      self.begin()
+   def unfiltered(self):
+      self.ret, self.frame = self.cap.read()
+      return(self.frame)
    def begin(self):
-        self.ret, self.frame1 = self.cap.read()
-        self.prvs = cv2.cvtColor(self.frame1,cv2.COLOR_BGR2GRAY)
-        self.hsv = np.zeros_like(self.frame1)
-        self.hsv[...,1] = 255
+      self.frame1 = self.unfiltered()
+      self.prvs = cv2.cvtColor(self.frame1,cv2.COLOR_BGR2GRAY)
+      self.hsv = np.zeros_like(self.frame1)
+      self.hsv[...,1] = 255
    def detect(self):
-        self.ret, self.frame2 = self.cap.read()
-        self.next = cv2.cvtColor(self.frame2,cv2.COLOR_BGR2GRAY)
-
-        self.flow = cv2.calcOpticalFlowFarneback(self.prvs, self.next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-
-        self.mag, self.ang = cv2.cartToPolar(self.flow[...,0], self.flow[...,1])
-        self.hsv[...,0] = self.ang*180/np.pi/2
-        self.hsv[...,2] = cv2.normalize(self.mag,None,0,255,cv2.NORM_MINMAX)
-        self.rgb = cv2.cvtColor(self.hsv,cv2.COLOR_HSV2BGR)
-        return (self.rgb)
+      self.ret, self.frame2 = self.cap.read()
+      self.next = cv2.cvtColor(self.frame2,cv2.COLOR_BGR2GRAY)
+      self.flow = cv2.calcOpticalFlowFarneback(self.prvs, self.next, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+      self.mag, self.ang = cv2.cartToPolar(self.flow[...,0], self.flow[...,1])
+      self.hsv[...,0] = self.ang*180/np.pi/2
+      self.hsv[...,2] = cv2.normalize(self.mag,None,0,255,cv2.NORM_MINMAX)
+      self.rgb = cv2.cvtColor(self.hsv,cv2.COLOR_HSV2BGR)
+      return (self.rgb)
 
 
 
@@ -98,35 +99,35 @@ if __name__ == '__main__':
    #enable Printer for debugging log
    while True:
 
-      left_image=left_handle.detect()
+      #left_image=left_handle.detect()
+      left_image=left_handle.unfiltered()
 
-      right_image=right_handle.detect()
+      right_image=right_handle.unfiltered()
 
-      leftqueue.put(left_image)  # Added
-      rightqueue.put(right_image)  # Added
+      #right_image=right_handle.detect()
+
+      leftqueue.put(left_image)
+      rightqueue.put(right_image)
       input_frame = outqueue.get()
       taskqueue.put(input_frame)
       cv2.imshow('combined output', input_frame)
-
-      if (cv2.waitKey(10) & 0xFF) == ord('q'):
+      stroke = (cv2.waitKey(30) & 0xFF)
+      if stroke == ord('q'):
          print ("user abort by input")
          cv2.destroyAllWindows()
          exit(0)
          break
-      elif (cv2.waitKey(10) & 0xFF) == ord('w'):
-
+      elif stroke == ord('w'):
          print ("writing output")
          cv2.imwrite("sample.png", input_frame)
          continue
-      elif (cv2.waitKey(10) & 0xFF) == ord('r'):
+      elif stroke == ord('r'):
          print ("resetting orientation")
          left_handle.begin()
          right_handle.begin()
-
          continue
 
       continue
 
 taskqueue.put(None)
-p.join()
 cv2.destroyAllWindows()
