@@ -66,7 +66,7 @@ class Feature():
       self.hsv = np.zeros_like(self.frame1)
       self.hsv[...,1] = 255
 
-      r,h,c,w = 200,20,300,20  #row, height, column, width  
+      r,h,c,w = 200,100,200,100  #xy, columns, rows  
       self.track_window = (r,h,c,w)
       self.roi = self.frame[r:r+h, c:c+w]
       self.hsv_roi =  cv2.cvtColor(self.frame1, cv2.COLOR_BGR2HSV)
