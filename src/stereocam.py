@@ -53,14 +53,15 @@ class Printr(Process):
        sys.stderr = open(str(os.getpid()) + "_error.out", "a")
 
 class Feature():
-    def __init__(self, cap_idx):
+   def __init__(self, cap_idx):
         self.cap = cv2.VideoCapture(cap_idx)
+        self.begin()
+   def begin(self):
         self.ret, self.frame1 = self.cap.read()
         self.prvs = cv2.cvtColor(self.frame1,cv2.COLOR_BGR2GRAY)
         self.hsv = np.zeros_like(self.frame1)
         self.hsv[...,1] = 255
-
-    def detect(self):
+   def detect(self):
         self.ret, self.frame2 = self.cap.read()
         self.next = cv2.cvtColor(self.frame2,cv2.COLOR_BGR2GRAY)
 
@@ -71,7 +72,6 @@ class Feature():
         self.hsv[...,2] = cv2.normalize(self.mag,None,0,255,cv2.NORM_MINMAX)
         self.rgb = cv2.cvtColor(self.hsv,cv2.COLOR_HSV2BGR)
         return (self.rgb)
-
 
 
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
    eyes = Process(target=image_display, args=(leftqueue, rightqueue, outqueue))
    eyes.start()
 
-   r= Reader( taskqueue, printer).start()
+   r= Reader(taskqueue, printer).start()
    #p = Printr(printer).start()
    #enable Printer for debugging log
    while True:
@@ -113,10 +113,16 @@ if __name__ == '__main__':
          cv2.destroyAllWindows()
          exit(0)
          break
-      if (cv2.waitKey(10) & 0xFF) == ord('w'):
+      elif (cv2.waitKey(10) & 0xFF) == ord('w'):
 
          print ("writing output")
          cv2.imwrite("sample.png", input_frame)
+         continue
+      elif (cv2.waitKey(10) & 0xFF) == ord('r'):
+         print ("resetting orientation")
+         left_handle.begin()
+         right_handle.begin()
+
          continue
 
       continue
